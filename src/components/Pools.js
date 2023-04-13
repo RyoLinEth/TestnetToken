@@ -12,7 +12,9 @@ const CreatePoolContract = "0xdFfbd6df5C039B27096e760fFD5B734dc33368F3"
 
 const Pools = (props) => {
 
-    const { defaultAccount } = props
+    const { defaultAccount
+        // , isFiltered, setIsFiltered 
+    } = props
 
     const explorerURL = "https://testnet.bscscan.com/address/";
 
@@ -73,6 +75,7 @@ const Pools = (props) => {
             }
         }
         setHaveFiltered(prev => !prev)
+        // setIsFiltered(true)
     }
 
     const [showList, setShowList] = useState(0);

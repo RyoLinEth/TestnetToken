@@ -13,6 +13,7 @@ function App() {
     console.log("Account Change to " + value)
   }
 
+  // const [isFiltered, setIsFiltered] = useState(false);
   return (
     <Router>
       <div>
@@ -30,7 +31,11 @@ function App() {
         </nav>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/viewPool" element={<Pools defaultAccount={defaultAccount} />} />
+          <Route path="/viewPool"
+            element={
+              <Pools defaultAccount={defaultAccount} 
+              // isFiltered={isFiltered} setIsFiltered={setIsFiltered} 
+              />} />
           <Route path="/createPool" element={<Wizard defaultAccount={defaultAccount} />} />
           <Route path="/tokenFaucet" element={<TokenFaucet />} />
         </Routes>
