@@ -68,10 +68,10 @@ const Pools = (props) => {
 
             //  結束區塊 < 現在區塊 => 已結束
             if (i_endBlock < block.number) {
-                endPool.push(poolsData[i])
+                setEndPool([...endPool, poolsData[i]])
             }
             else {
-                runningPool.push(poolsData[i])
+                setRunningPool([...runningPool ,poolsData[i]])
             }
         }
         setHaveFiltered(prev => !prev)
