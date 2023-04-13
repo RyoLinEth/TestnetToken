@@ -17,11 +17,11 @@ function App() {
   return (
     <Router>
       <div>
-        <h1>My App</h1>
+        <h1 style={{ position: 'fixed', top: '10px', left: '10vw' }}>TEST App</h1>
         <div style={{ position: 'fixed', top: '10px', right: '10vw' }}>
           <WalletConnect defaultAccountChange={handleDefaultAccount} />
         </div>
-        <nav className="navigation">
+        <nav className="navigation" style={{ marginTop: '100px' }}>
           <ul className="navigation__links">
             <li><Link to="/">Home</Link></li>
             <li><Link to="/viewPool">View Pools</Link></li>
@@ -33,7 +33,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/viewPool"
             element={
-              <Pools defaultAccount={defaultAccount} 
+              <Pools defaultAccount={defaultAccount}
               // isFiltered={isFiltered} setIsFiltered={setIsFiltered} 
               />} />
           <Route path="/createPool" element={<Wizard defaultAccount={defaultAccount} />} />

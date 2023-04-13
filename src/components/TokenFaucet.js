@@ -50,7 +50,7 @@ const TokenFaucet = (props) => {
         <div style={{ display: "flex", justifyContent: "center", alignItems: 'center', flexDirection: "column", marginTop:'5vh  '}}>
             
             <h3>點擊一次 獲得代幣 10000000個</h3>
-
+            <h4 style={{fontWeight:'bold'}}>本代幣僅用於 Bsc 測試網路</h4>
 
             <button
                 className="btn btn-primary"

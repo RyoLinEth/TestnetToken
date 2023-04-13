@@ -1,7 +1,4 @@
 /* 默认情况下，隐藏侧边栏，并显示导航栏 */
-.navigation__sidebar {
-  display: none;
-}
 
 .navigation__links {
   display: flex;
@@ -9,26 +6,4 @@
   list-style-type: none;
   margin: 0;
   padding: 0;
-}
-
-/* 在移动设备上，显示侧边栏，并隐藏导航栏 */
-@media (max-width: 768px) {
-  .navigation__links {
-    display: none;
-  }
-
-  .navigation__sidebar {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: -250px;
-    width: 250px;
-    height: 100%;
-    background-color: #ccc;
-    transition: left 0.3s ease;
-  }
-
-  .navigation__sidebar.show {
-    left: 0;
-  }
 }
