@@ -10,7 +10,7 @@ const NFTContent = () => {
         fetchContent()
     }, [])
     const fetchContent = () => {
-        fetch("http://13.230.57.144:3000/json/791.json")
+        fetch("https://ryolineth.github.io/api/791.json")
             .then((responsed) => responsed.json())
             .then((data) => {
                 console.log(data);
