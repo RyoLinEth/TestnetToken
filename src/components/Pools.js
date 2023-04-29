@@ -62,6 +62,7 @@ const Pools = (props) => {
         if (haveFiltered) return;
         let block = await provider.getBlock("latest", false, true);
         console.log("Filtering")
+
         for (let i = 0; i < poolsData.length; i++) {
             //  結束區塊
             let i_endBlock = ethers.utils.formatUnits(poolsData[i][6], "0")
@@ -75,7 +76,6 @@ const Pools = (props) => {
             }
         }
         setHaveFiltered(prev => !prev)
-        // setIsFiltered(true)
     }
 
     const [showList, setShowList] = useState(0);

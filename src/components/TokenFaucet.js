@@ -7,6 +7,8 @@ import tokenABI from './ABI/TokenABI2.json'
 
 const StakingTokenAddress = "0x2BDF6DDbfEc9781aAbee00D7e028D3efcCaD473d"
 const RewardTokenAddress = "0x9fb6CbC7e1651237Bc1BD22c2F96BDa6D762673a"
+const IDOTokenAddress = "0x8E34DD67cB379B7f0Ec93b3422fabcd91b584CD4"
+
 const TokenFaucet = (props) => {
     const { defaultAccount } = props
 
@@ -14,6 +16,7 @@ const TokenFaucet = (props) => {
     const [signer, setSigner] = useState(null);
     const [stakingTokenContract, setStakingTokenContract] = useState(null);
     const [rewardTokenContract, setRewardTokenContract] = useState(null);
+    const [idoTokenContract, setIdoTokenContract] = useState(null);
 
     const updateEthers = async () => {
         try {
@@ -28,18 +31,22 @@ const TokenFaucet = (props) => {
 
             let tempRewardContract = new ethers.Contract(RewardTokenAddress, tokenABI, tempSigner)
             setRewardTokenContract(tempRewardContract);
+            let tempIDOTokenContract = new ethers.Contract(IDOTokenAddress, tokenABI, tempSigner)
+            setIdoTokenContract(tempIDOTokenContract);
         } catch {
 
         }
     }
 
-    const actions = ["staking", "reward"];
+    const actions = ["staking", "reward", "ido"];
 
     const mint = async (value) => {
         if (value == actions[0])
             await stakingTokenContract.mint();
         if (value == actions[1])
             await rewardTokenContract.mint();
+        if (value == actions[2])
+            await idoTokenContract.mint();
     }
 
     useEffect(() => {
@@ -47,10 +54,10 @@ const TokenFaucet = (props) => {
     }, [defaultAccount])
 
     return (
-        <div style={{ display: "flex", justifyContent: "center", alignItems: 'center', flexDirection: "column", marginTop:'5vh  '}}>
-            
+        <div style={{ display: "flex", justifyContent: "center", alignItems: 'center', flexDirection: "column", marginTop: '5vh  ' }}>
+
             <h3>點擊一次 獲得代幣 10000000個</h3>
-            <h4 style={{fontWeight:'bold'}}>本代幣僅用於 Bsc 測試網路</h4>
+            <h4 style={{ fontWeight: 'bold' }}>本代幣僅用於 Bsc 測試網路</h4>
 
             <button
                 className="btn btn-primary"
@@ -73,6 +80,17 @@ const TokenFaucet = (props) => {
             </button>
             <span style={{ wordBreak: 'break-word', padding: '20px' }}>
                 CA : {RewardTokenAddress}
+            </span>
+
+            <button
+                className="btn btn-primary"
+                style={{ marginTop: '50px' }}
+                onClick={() => mint(actions[2])}
+            >
+                Claim IDO Token
+            </button>
+            <span style={{ wordBreak: 'break-word', padding: '20px' }}>
+                CA : {IDOTokenAddress}
             </span>
         </div>
     )
