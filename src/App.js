@@ -5,6 +5,8 @@ import Pools from './components/Pools';
 import Wizard from './components/Steps/Wizard';
 import TokenFaucet from './components/TokenFaucet';
 import './App.css'
+import NFTContent from './components/NFTContent';
+import MyNFTs from './components/MyNFTs';
 
 function App() {
   const [defaultAccount, setDefaultAccount] = useState(null);
@@ -27,6 +29,8 @@ function App() {
             <li><Link to="/viewPool">View Pools</Link></li>
             <li><Link to="/createPool">Create Pool</Link></li>
             <li><Link to="/tokenFaucet">Token Faucet</Link></li>
+            <li><Link to="/nftContent">NFT Content</Link></li>
+            <li><Link to="/myNFTs">My NFT</Link></li>
           </ul>
         </nav>
         <Routes>
@@ -38,6 +42,8 @@ function App() {
               />} />
           <Route path="/createPool" element={<Wizard defaultAccount={defaultAccount} />} />
           <Route path="/tokenFaucet" element={<TokenFaucet />} />
+          <Route path="/nftContent" element={<NFTContent />} />
+          <Route path="/myNFTs" element={<MyNFTs defaultAccount={defaultAccount}/>} />
         </Routes>
       </div>
     </Router>
