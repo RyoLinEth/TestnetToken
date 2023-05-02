@@ -11,6 +11,7 @@ const MyNFTs = ({ defaultAccount }) => {
 
     const [nftBalance, setNFTBalance] = useState(null);
     const [imgDatas, setImgDatas] = useState([]);
+    const [tokenURIS, setTokenURIS] = useState([])
 
     const initContract = async () => {
         try {
@@ -32,10 +33,12 @@ const MyNFTs = ({ defaultAccount }) => {
 
             //  轉換成 num
             const OwnedToken = bigNumOwnedToken.map(num => ethers.utils.formatUnits(num, 0));
-            console.log("Getting NFT Data... 1")
             //  獲取各自的 tokenURI
             const tokenUris = OwnedToken.map((tokenID) => tempNFTContract.tokenURI(tokenID));
-            console.log("Getting NFT Data... 2")
+            setTokenURIS(tokenURIS);
+            console.log(tokenUris)
+
+            //  一次太多了
             //  得到所有 mint 到的 tokenURI
             Promise.all(tokenUris)
                 .then((responses) => {
@@ -76,6 +79,7 @@ const MyNFTs = ({ defaultAccount }) => {
             initContract()
         }
     }, [defaultAccount])
+    
     const nftMintAddress = '0x9c657E4A638df5E5e5d2b08cDCD7B3A2cE25052D'
     return (
         <div style={{ display: "flex", justifyContent: "center", alignItems: 'center', flexDirection: "column", marginTop: '5vh  ' }}>

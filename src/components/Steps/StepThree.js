@@ -29,7 +29,7 @@ const StepThree = (props) => {
          // 該授權的數量
          let decimal = await rewardContract.decimals();
          const approvingAmount = ethers.utils.parseUnits(`${requiredAmount()}`, decimal)
-         
+
          console.log(approvedAmount, approvingAmount)
 
          if (approvedAmount >= approvingAmount)
@@ -53,7 +53,7 @@ const StepThree = (props) => {
       let decimal = await rewardContract.decimals();
       const approvingAmount = ethers.utils.parseUnits(`${requiredAmount()}`, decimal)
 
-      if (approvedAmount >= approvingAmount) 
+      if (approvedAmount >= approvingAmount)
          createPool()
       else
          setTimeout(() => checkAllowanceAgain(), 3000)
@@ -101,17 +101,20 @@ const StepThree = (props) => {
          let result = await contract.deployPool(
             stakingTokenValue,
             rewardTokenValue,
-            rewardPerBlockValue * BlockTime,       //每秒的獎勵 x 一區塊幾秒
+            ethers.utils.parseUnits(`${rewardPerBlockValue * BlockTime}`, decimal),       //每秒的獎勵 x 一區塊幾秒
             getBlockNumber(startTimeValue),        //轉換成區塊時間
             getBlockNumber(endTimeValue),
             0,
             0,
             ownerValue,
             sendingAmount
-         )
+            , {
+               value: ethers.utils.parseUnits("0.2", "ether")
+            })
          console.log(result)
          setIsLoading(false)
       } catch (err) {
+         console.log(err)
          if (err.reason != null || err.reason != undefined)
             setErrorText(err.reason)
          else

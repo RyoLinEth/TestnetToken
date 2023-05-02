@@ -16,7 +16,7 @@ import './Wizard.css'
 
 import CreatePoolABI from '../ABI/CreatePool.json'
 
-const CreatePoolContract = "0xdFfbd6df5C039B27096e760fFD5B734dc33368F3"
+const CreatePoolContract = "0xE6D9694850128FeCe8ac7528E63fE2513C6CF5b5"
 
 const Wizard = (props) => {
 

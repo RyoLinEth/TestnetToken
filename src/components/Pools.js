@@ -8,7 +8,7 @@ import ErrorMessage from './ErrorMessage'
 
 import CreatePoolABI from './ABI/CreatePool.json'
 
-const CreatePoolContract = "0xdFfbd6df5C039B27096e760fFD5B734dc33368F3"
+const CreatePoolContract = "0xE6D9694850128FeCe8ac7528E63fE2513C6CF5b5"
 
 const Pools = (props) => {
 
@@ -59,23 +59,29 @@ const Pools = (props) => {
     }, [poolData])
 
     const filterData = async (poolsData) => {
-        if (haveFiltered) return;
-        let block = await provider.getBlock("latest", false, true);
-        console.log("Filtering")
+        try {
+            if (haveFiltered) return;
+            let block = await provider.getBlock("latest", false, true);
+            console.log("Filtering")
 
-        for (let i = 0; i < poolsData.length; i++) {
-            //  結束區塊
-            let i_endBlock = ethers.utils.formatUnits(poolsData[i][6], "0")
+            for (let i = 0; i < poolsData.length; i++) {
+                //  結束區塊
+                let i_endBlock = ethers.utils.formatUnits(poolsData[i][6], "0")
 
-            //  結束區塊 < 現在區塊 => 已結束
-            if (i_endBlock < block.number) {
-                setEndPool([...endPool, poolsData[i]])
+                //  結束區塊 < 現在區塊 => 已結束
+                if (i_endBlock < block.number) {
+                    console.log("Setting Ended")
+                    setEndPool([...endPool, poolsData[i]])
+                }
+                else {
+                    console.log("Setting Running")
+                    setRunningPool([...runningPool, poolsData[i]])
+                }
             }
-            else {
-                setRunningPool([...runningPool ,poolsData[i]])
-            }
+            setHaveFiltered(prev => !prev)
+        } catch (err) {
+            console.log(err)
         }
-        setHaveFiltered(prev => !prev)
     }
 
     const [showList, setShowList] = useState(0);
@@ -184,7 +190,7 @@ const Pools = (props) => {
                                                         </a>
                                                     </td>
                                                     <td>{item[4]}</td>
-                                                    <td>{ethers.utils.formatUnits(item[5], "9")}</td>
+                                                    <td>{ethers.utils.formatUnits(item[5], ethers.utils.formatUnits(item[7], 0))}</td>
                                                     <td>{ethers.utils.formatUnits(item[6], "0")}</td>
                                                 </tr>
                                             )
@@ -212,7 +218,7 @@ const Pools = (props) => {
                                                         </a>
                                                     </td>
                                                     <td>{item[4]}</td>
-                                                    <td>{ethers.utils.formatUnits(item[5], "9")}</td>
+                                                    <td>{ethers.utils.formatUnits(item[5], ethers.utils.formatUnits(item[7], 0))}</td>
                                                     <td>{ethers.utils.formatUnits(item[6], "0")}</td>
                                                 </tr>
                                             )
