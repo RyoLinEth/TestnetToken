@@ -8,6 +8,8 @@ import './App.css'
 import NFTContent from './components/NFTContent';
 import MyNFTs from './components/MyNFTs';
 import PoolsControl from './components/PoolsControl';
+import Robot from './components/Robot';
+import FunctionBot from './components/FunctionBot'
 
 function App() {
   const [defaultAccount, setDefaultAccount] = useState(null);
@@ -42,24 +44,29 @@ function App() {
           <ul className="navigation__links">
             <li><Link to="/">Home</Link></li>
             <li>
+              <span onClick={toggleNftMenu}>Robot</span>
+              <ul>
+                <li><Link to="/bot">Trading Bot</Link></li>
+                <li><Link to="/functionBot">Function Bot</Link></li>
+              </ul>
+            </li>
+            <li>
               <span onClick={togglePoolMenu}>Pool</span>
               {/* {menuOpenNumber === 1 && ( */}
-                <ul>
-                  <li><Link to="/viewPool">View Pools</Link></li>
-                  <li><Link to="/createPool">Create Pool</Link></li>
-                  <li><Link to="/tokenFaucet">Token Faucet</Link></li>
-                  <li><Link to="/poolsControl">Pool Control</Link></li>
-                </ul>
+              <ul>
+                <li><Link to="/viewPool">View Pools</Link></li>
+                <li><Link to="/createPool">Create Pool</Link></li>
+                <li><Link to="/tokenFaucet">Token Faucet</Link></li>
+                <li><Link to="/poolsControl">Pool Control</Link></li>
+              </ul>
               {/* )} */}
             </li>
             <li>
               <span onClick={toggleNftMenu}>NFT</span>
-              {/* {menuOpenNumber === 2 && ( */}
-                <ul>
-                  <li><Link to="/nftContent">NFT Content</Link></li>
-                  <li><Link to="/myNFTs">My NFT</Link></li>
-                </ul>
-              {/* )} */}
+              <ul>
+                <li><Link to="/nftContent">NFT Content</Link></li>
+                <li><Link to="/myNFTs">My NFT</Link></li>
+              </ul>
             </li>
           </ul>
         </nav>
@@ -75,6 +82,8 @@ function App() {
           <Route path="/nftContent" element={<NFTContent />} />
           <Route path="/myNFTs" element={<MyNFTs defaultAccount={defaultAccount} />} />
           <Route path="/poolsControl" element={<PoolsControl defaultAccount={defaultAccount} />} />
+          <Route path="/bot" element={<Robot />} />
+          <Route path="/functionBot" element={<FunctionBot />} />
         </Routes>
       </div>
     </Router>

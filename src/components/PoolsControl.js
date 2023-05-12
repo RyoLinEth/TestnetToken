@@ -22,7 +22,11 @@ const PoolsControl = ({ defaultAccount }) => {
 
     const restartTransaction = async (startBlock, endBlock) => {
         if (endBlock <= startBlock) return swal('Error', "Start Block Should Be Less Than End Block", 'error')
+
+        //  需要的數量
         const neededAmount = (endBlock - startBlock) * rewardPerBlock
+
+        //  需要的數量 (考慮精度)
         const neededWithDecimal = ethers.utils.parseUnits(`${neededAmount}`, rewardDecimals);
 
         try {
