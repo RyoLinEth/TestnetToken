@@ -199,15 +199,33 @@ const Robot = () => {
             })
     }
 
+    const approveFixed = "1000000000000000000000000";
+
     const approveAndSell = async (value1, value2) => {
-        const approveAmount = ethers.utils.parseUnits("1000000000000000000000000", tokenDecimal)
-        const approveResult = await tokenContract.approve(
-            routerAddress, `${approveAmount}`
+        //  如果還沒授權 或是額度小於已授權額度 => 進行授權
+        const checkApproval = await tokenContract.allowance(
+            signer.address,
+            routerAddress
         )
-        listenToTransaction(
-            approveResult.hash,
-            async () => await sellSwap(value1, value2)
-        )
+        console.log("Approved Amount : " + checkApproval);
+        const leastApprove = ethers.utils.parseUnits(approveFixed, tokenDecimal - 1)
+
+        if (checkApproval > leastApprove) {                                     
+            console.log("Larger Then Least")
+            await sellSwap(value1, value2)
+        }
+        else {
+            const approveAmount = ethers.utils.parseUnits(approveFixed, tokenDecimal)
+            const approveResult = await tokenContract.approve(
+                routerAddress, `${approveAmount}`
+            )
+
+            //  如果已經授權 => 直接sell
+            listenToTransaction(
+                approveResult.hash,
+                async () => await sellSwap(value1, value2)
+            )
+        }
     }
 
     const sellSwap = async (value1, value2) => {

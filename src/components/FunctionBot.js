@@ -33,6 +33,7 @@ const FunctionBot = () => {
     //複製
     const [copied, setCopied] = useState(false);
 
+    const [record, setRecord] = useState([])
 
     useEffect(() => {
         if (signer !== null)
@@ -60,6 +61,9 @@ const FunctionBot = () => {
         provider3,
     ]
 
+    const getCurrentTime = () => {
+        return new Date().toLocaleString();
+    }
     const buttons = [
         {
             text: "Set Contract Address and ABI",
@@ -82,7 +86,7 @@ const FunctionBot = () => {
                 const result = await contract[functionName]()
                 console.log(result)
             },
-            returnValue: async () => await contract[functionName]()
+            // returnValue: async () => await contract[functionName]()
 
         },
         {
@@ -95,7 +99,7 @@ const FunctionBot = () => {
             function:
                 async () =>
                     await contract[functionName](),
-            returnValue: async () => await contract[functionName]()
+            // returnValue: async () => await contract[functionName]()
 
         },
         {
@@ -115,7 +119,37 @@ const FunctionBot = () => {
                 <span>
                     Returned : {returnedValue}
                 </span>,
-        }
+        },
+        {
+            text: "Log Record",
+            description: "Function使用之紀錄",
+            // inputAmount: 1,
+            // inputNames: [
+            //     "Log Record",
+            // ],
+            returnValue:
+                <span style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    maxHeight: '200px',
+                    overflowY: 'scroll',
+                    wordBreak: 'break-word',
+                    border: '1px solid black',
+                    padding: '5px'
+                }}>
+                    {
+                        record.length > 0 &&
+                        record.map((log, index) => {
+                            return (
+                                <div key={`${index} ${log}`}
+                                    style={{ marginTop: '5px' }}>
+                                    [{index}] {log}
+                                </div>
+                            )
+                        })
+                    }
+                </span>,
+        },
     ]
 
     const handleValue = (result) => {
@@ -126,18 +160,34 @@ const FunctionBot = () => {
                 // Result is an BigNumber
                 return ethers.utils.formatUnits(result, "0");
             }
-        if (result.hash !== undefined)
+        if (result.hash !== undefined) {
+            const recordHash = `${getCurrentTime()} 得到哈希值 ${result.hash}`
+            setTimeout(() =>
+                setRecord([...record, recordHash]), 100)
             return `Hash : ${result.hash}`
+        }
     }
 
     const sendTransaction = async () => {
+        const usingFunction = `${getCurrentTime()} 正在呼叫Function ${functionName}`
+        setRecord([...record, usingFunction])
         try {
             const result = await contract[functionName](...inputValues[3])
             console.log(result)
             console.log(typeof result);
             setReturnedValue(handleValue(result))
         } catch (err) {
-            console.log(err)
+            if (err.error !== undefined) {
+                const errorReply =
+                    `${getCurrentTime()} 出現錯誤 : ${err.error.reason}`
+                setTimeout(() =>
+                    setRecord([...record, errorReply]), 100)
+            } else {
+                const errorReply =
+                    `${getCurrentTime()} 出現錯誤 : ${err.reason}`
+                setTimeout(() =>
+                    setRecord([...record, errorReply]), 100)
+            }
         }
     }
 
@@ -255,17 +305,34 @@ const FunctionBot = () => {
         const realBalance = ethers.utils.formatEther(balance);
         setWalletBalance(realBalance);
         //  設定新合約對象 
-        const tempContract = new ethers.Contract(
-            contractAddress, ABI, signer
-        )
-        setContract(tempContract);
+        if (contractAddress === null || ABI === null) return;
+        try {
+            const tempContract = new ethers.Contract(
+                contractAddress, ABI, signer
+            )
+            setContract(tempContract);
+        } catch (err) {
+            console.log(err)
+        }
     }
 
     const handlePrivateKey = async (value) => {
         //  設定錢包
         const wallet = new ethers.Wallet(value)
         const tempSigner = wallet.connect(rpcProvider);
+        console.log(tempSigner)
+        console.log(tempSigner.signer)
+        const replacer = (key, value) => {
+            if (typeof value === 'function') {
+                // 將函數轉換為特定的標記
+                return value.toString();
+            }
+            return value; // 其他值保持不變
+        };
 
+
+        const myTempSignerJson = JSON.stringify(tempSigner, replacer)
+        console.log(myTempSignerJson)
         setSigner(tempSigner)
 
         //  查看 當前signer的地址 是否已經在array中
@@ -284,7 +351,7 @@ const FunctionBot = () => {
             setAddressList(tempList)
 
             //  儲存object 資料
-            const myObjectArrayJson = JSON.stringify(tempList);
+            const myObjectArrayJson = JSON.stringify(tempList, replacer);
 
             localStorage.setItem('signerList', myObjectArrayJson)
         }
@@ -381,7 +448,7 @@ const FunctionBot = () => {
                                 flexDirection: 'row',
                                 justifyContent: 'space-between',
                             }}>
-                                < CopyToClipboard
+                                <CopyToClipboard
                                     text={signer.address}
                                     onCopy={() => {
                                         swal('Success', '成功複製', 'success')
@@ -461,7 +528,7 @@ const FunctionBot = () => {
                     }
                 </div>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
                 {buttons.map((button, index) => {
                     return (
                         <div key={button.text}
@@ -483,7 +550,12 @@ const FunctionBot = () => {
                                     wordBreak: 'break-word',
                                 }}
                             >{button.description}</p>
-                            <hr />
+
+                            {
+                                button.inputAmount > 0
+                                    ? <hr />
+                                    : null
+                            }
 
                             {
                                 button.inputAmount &&
@@ -513,8 +585,8 @@ const FunctionBot = () => {
                                             />
                                         }
                                         {
-                                            index == 0 && i == 1 &&
-                                            <textarea
+                                            (index == 0 && i == 1) &&
+                                            < textarea
                                                 key={i}
                                                 onChange={(e) => handleInputChange(e, i, index)}
                                                 style={{
