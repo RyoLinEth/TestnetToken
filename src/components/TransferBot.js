@@ -2,16 +2,71 @@ import React, { useState, useEffect } from 'react'
 import { ethers } from 'ethers'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import swal from 'sweetalert'
-import TokenABI from './ABI/TokenABI.json'
-import RouterABI from './ABI/RouterABI.json'
 
 const provider = 'https://data-seed-prebsc-1-s1.binance.org:8545'
 const provider2 = 'https://data-seed-prebsc-1-s2.binance.org:8545'
 const provider3 = 'https://data-seed-prebsc-1-s3.binance.org:8545'
 
-const routerAddress = '0xD99D1c33F9fC3444f8101754aBC46c52416550D1'
+const GetHex = () => {
 
-const Robot = () => {
+    const transferABI = [
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "account",
+                    "type": "address"
+                }
+            ],
+            "name": "balanceOf",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "recipient",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "transfer",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "decimals",
+            "outputs": [
+                {
+                    "internalType": "uint8",
+                    "name": "",
+                    "type": "uint8"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        }
+    ]
 
     const [rpcProvider, setRpcProvider] = useState(
         new ethers.providers.JsonRpcProvider(provider)
@@ -22,33 +77,25 @@ const Robot = () => {
     //設定錢包
     const [walletBalance, setWalletBalance] = useState(null);
     const [signer, setSigner] = useState(null);
+    const [functionName, setFunctionName] = useState(null);
 
     //  連結合約
-    const [tokenContract, setTokenContract] = useState(null);
-    const [routerContract, setRouterContract] = useState(null);
+    const [contractAddress, setContractAddress] = useState(null);
+    const [contract, setContract] = useState(null);
+    const [returnedValue, setReturnedValue] = useState(null);
 
-    //  回傳值
-    const [tokenName, setTokenName] = useState(null);
-    const [tokenSymbol, setTokenSymbol] = useState(null);
-    const [tokenDecimal, setTokenDecimal] = useState(null);
     const [tokenBalance, setTokenBalance] = useState(null);
-
-    const [buyHash, setBuyHash] = useState(null);
-    const [sellHash, setSellHash] = useState(null);
+    const [tokenDecimal, setTokenDecimal] = useState(null);
 
     //複製
     const [copied, setCopied] = useState(false);
 
+    const [record, setRecord] = useState([])
 
     useEffect(() => {
         if (signer !== null)
             handleSignerChange()
     }, [signer])
-
-    useEffect(() => {
-        if (tokenContract !== null)
-            getTokenStatus();
-    }, [tokenContract])
 
     useEffect(() => {
         const tempSignerList = localStorage.getItem('signerList');
@@ -71,63 +118,120 @@ const Robot = () => {
         provider3,
     ]
 
+    const getCurrentTime = () => {
+        return new Date().toLocaleString();
+    }
     const buttons = [
         {
-            text: "Set Token",
-            description: "輸入欲買入之代幣合約地址",
+            text: "Set Contract Address",
+            description: "輸入代幣合約之地址",
             inputAmount: 1,
             inputNames: [
-                "Address",
+                "Contract Address"
             ],
-            function: async (value) => setToken(value),
+            function: async (value1) => setData(value1),
             returnValue:
                 <span>
-                    代幣名稱 : {tokenName} <br />
-                    代幣簡稱 : {tokenSymbol} <br />
-                    代幣精度 : {tokenDecimal} <br />
                     代幣餘額 : {tokenBalance}
                 </span>,
+            judgement:
+                tokenBalance !== null ? true : false
         },
         {
-            text: "Buy With BNB",
-            description: "輸入欲買入之bnb數量 滑點",
+            text: "Transfer token",
+            description: "輸入接收地址及數量",
             inputAmount: 2,
             inputNames: [
-                "BNB",
-                "Slippage"
+                "Receive Address",
+                "Transfer Amount"
             ],
-            function: async (value1, value2) =>
-                buySwap(value1, value2),
+            function: async (recipient, amount) => await sendTransaction(
+                recipient, amount
+            ),
             returnValue:
-                <span>交易哈希 :
+                <span>
+                    Returned Hash:
                     {
-                        buyHash !== null &&
-                        `${buyHash.slice(0, 4)}...${buyHash.slice(-4)}`
-                    }</span>,
-        },
-        {
-            text: "Sell Token",
-            description: "輸入欲賣出之代幣數量",
-            inputAmount: 2,
-            inputNames: [
-                "Token",
-                "Slippage"
-            ],
-            function: async (value1, value2) =>
-                approveAndSell(value1, value2),
-            returnValue:
-                <span>交易哈希 :
-                    {
-                        sellHash !== null &&
-                        `${sellHash.slice(0, 4)}...${sellHash.slice(-4)}`
-                    }</span>,
+                        returnedValue !== null &&
+                        <a href={`https://testnet.bscscan.com/tx/${returnedValue}`}>
+                            {returnedValue.slice(0, 4)}...{returnedValue.slice(-4)}
+                        </a>
+                    }
+                </span>,
+            judgement:
+                returnedValue !== null ? true : false
         },
     ]
 
-    const [inputValues, setInputValues] = useState(buttons.map(button => new Array(button.inputAmount).fill("")));
+    const sendTransaction = async (recipient, amount) => {
+        console.log("Sending Transaction...")
+        const gasPrice = ethers.utils.parseUnits("10", "9") //10 Gwei;
+        console.log(...inputValues[1])
+        console.log(tokenDecimal);
+        try {
+            const result = await contract.transfer(
+                inputValues[1][0],
+                ethers.utils.parseUnits(inputValues[1][1], tokenDecimal),
+                {
+                    gasPrice: gasPrice
+                }
+            )
+            console.log(result)
+            console.log(typeof result);
+            setReturnedValue(result.hash);
+            await listenToTransaction(result.hash, getBalanceAndTokenBalance);
+        } catch (err) {
+            if (err.error !== undefined) {
+                const errorReply =
+                    `${getCurrentTime()} 出現錯誤 : ${err.error.reason}`
+                setTimeout(() =>
+                    setRecord([...record, errorReply]), 100)
+            } else {
+                const errorReply =
+                    `${getCurrentTime()} 出現錯誤 : ${err.reason}`
+                setTimeout(() =>
+                    setRecord([...record, errorReply]), 100)
+            }
+            console.log("Error" + err)
+        }
+    }
+
+
+    const [inputValues, setInputValues] = useState(
+        buttons.map(button => new Array(button.inputAmount).fill(""))
+    );
+
+    useEffect(() => {
+        console.log("Contract Changed Successfully");
+        if (contractAddress !== null)
+            getBalanceAndTokenBalance();
+    }, [contract])
+
+    const setData = async (value1) => {
+        try {
+            setContractAddress(value1);
+            const tempContract = new ethers.Contract(
+                value1, transferABI, signer
+            );
+            console.log(tempContract)
+
+            setContract(tempContract);
+        } catch (err) {
+            console.log(err)
+        }
+        //  這是合約的 全部 Function(包含Constructor)
+    }
 
     const handleFunction = async (func, index) => {
-        const result = await func(...inputValues[index]);
+        console.log("Handling Function");
+        console.log(func, index)
+        console.log(...inputValues[index])
+        try {
+            const result = await func(...inputValues[index]);
+            console.log(result)
+        } catch (err) {
+            console.log(err)
+        }
         // do something with the result
     }
 
@@ -142,42 +246,19 @@ const Robot = () => {
         localStorage.removeItem('signerList')
     }
 
-    const setToken = async (value) => {
-        console.log(rpcProvider.connection.url);
-        console.log(signer)
-        try {
-            if (value.length !== 42) return console.log("Not Contract");
-
-            const tempTokenContract = new ethers.Contract(
-                value, TokenABI, signer
-            )
-            console.log(tempTokenContract);
-            setTokenContract(tempTokenContract)
-        } catch (err) {
-            console.log(err)
-        }
-    }
-
-    const getTokenStatus = async () => {
-        const name = await tokenContract.name();
-        const symbol = await tokenContract.symbol();
-        const tempDecimal = await tokenContract.decimals();
-        const tempTokenBalance = await tokenContract.balanceOf(signer.address);
-        const realTokenBalance = ethers.utils.formatUnits(tempTokenBalance, tempDecimal);
-        setTokenName(name);
-        setTokenSymbol(symbol);
-        setTokenDecimal(tempDecimal);
-        setTokenBalance(realTokenBalance);
-    }
-
     const getBalanceAndTokenBalance = async () => {
         // 重新獲取餘額操作
         const balance = await rpcProvider.getBalance(signer.address)
         const realBalance = ethers.utils.formatEther(balance);
         setWalletBalance(realBalance);
 
-        const tokenBalance = await tokenContract.balanceOf(signer.address);
-        const realTokenBalance = ethers.utils.formatUnits(tokenBalance, tokenDecimal)
+
+        const tempTokenBalance = await contract.balanceOf(signer.address);
+        const tempTokenDecimal = await contract.decimals();
+
+        const realTokenBalance = ethers.utils.formatUnits(tempTokenBalance, tempTokenDecimal);
+        console.log(realTokenBalance)
+        setTokenDecimal(tempTokenDecimal);
         setTokenBalance(realTokenBalance);
     }
 
@@ -199,112 +280,41 @@ const Robot = () => {
             })
     }
 
-    const approveFixed = "1000000000000000000000000";
-
-    const approveAndSell = async (value1, value2) => {
-        //  如果還沒授權 或是額度小於已授權額度 => 進行授權
-        const checkApproval = await tokenContract.allowance(
-            signer.address,
-            routerAddress
-        )
-        console.log("Approved Amount : " + checkApproval);
-        const leastApprove = ethers.utils.parseUnits(approveFixed, tokenDecimal - 1)
-
-        if (checkApproval > leastApprove) {
-            console.log("Larger Then Least")
-            await sellSwap(value1, value2)
-        }
-        else {
-            const approveAmount = ethers.utils.parseUnits(approveFixed, tokenDecimal)
-            const approveResult = await tokenContract.approve(
-                routerAddress, `${approveAmount}`
-            )
-
-            //  如果已經授權 => 直接sell
-            listenToTransaction(
-                approveResult.hash,
-                async () => await sellSwap(value1, value2)
-            )
-        }
-    }
-
-    const sellSwap = async (value1, value2) => {
-        const amountIn = ethers.utils.parseUnits(`${value1}`, `${tokenDecimal}`);
-        const amountOutMin = 0;
-        const WBNB = await routerContract.WETH();
-        const path = [
-            tokenContract.address, WBNB
-        ]
-        const to = signer.address
-
-        const gasPrice = ethers.utils.parseUnits("10", "9");
-        const deadline = (Date.now() / 1000).toFixed(0) + 1200
-        const result = await routerContract.swapExactTokensForETHSupportingFeeOnTransferTokens(
-            amountIn, amountOutMin, path, to, deadline,
-            {
-                gasPrice: gasPrice
-            }
-        )
-        setSellHash(result.hash);
-        listenToTransaction(
-            result.hash,
-            async () => await getBalanceAndTokenBalance()
-        )
-    }
-
-    const buySwap = async (value1, value2) => {
-        const payBNB = ethers.utils.parseEther(value1);
-        const amountOutMin = 0;
-        const WBNB = await routerContract.WETH();
-        const path = [
-            WBNB, tokenContract.address
-        ]
-        
-        const gasPrice = ethers.utils.parseUnits("10", "9");
-        const to = signer.address;
-        const deadline = (Date.now() / 1000).toFixed(0) + 1200
-        const result = await routerContract.swapExactETHForTokens(
-            amountOutMin, path, to, deadline, {
-            value: payBNB,
-            gasPrice: gasPrice
-        })
-        setBuyHash(result.hash)
-
-        listenToTransaction(
-            result.hash,
-            async () => await getBalanceAndTokenBalance()
-        )
-    }
-
-
     const handleSignerChange = async (value) => {
         //  查詢錢包餘額
         //  此時為bigNum
         const balance = await rpcProvider.getBalance(signer.address)
         const realBalance = ethers.utils.formatEther(balance);
         setWalletBalance(realBalance);
-
-        //  設定路由 
-        const tempRouterCA = new ethers.Contract(
-            routerAddress, RouterABI, signer
-        )
-        setRouterContract(tempRouterCA);
-
-        if (tokenContract !== null) {
-
-            const tempTokenContract = new ethers.Contract(
-                tokenContract.address, TokenABI, signer
+        //  設定新合約對象 
+        try {
+            const tempContract = new ethers.Contract(
+                contractAddress, transferABI, signer
             )
-            setTokenContract(tempTokenContract);
-        }
 
+            setContract(tempContract);
+        } catch (err) {
+            console.log(err)
+        }
     }
 
     const handlePrivateKey = async (value) => {
         //  設定錢包
         const wallet = new ethers.Wallet(value)
         const tempSigner = wallet.connect(rpcProvider);
+        console.log(tempSigner)
+        console.log(tempSigner.signer)
+        const replacer = (key, value) => {
+            if (typeof value === 'function') {
+                // 將函數轉換為特定的標記
+                return value.toString();
+            }
+            return value; // 其他值保持不變
+        };
 
+
+        const myTempSignerJson = JSON.stringify(tempSigner, replacer)
+        console.log(myTempSignerJson)
         setSigner(tempSigner)
 
         //  查看 當前signer的地址 是否已經在array中
@@ -323,7 +333,7 @@ const Robot = () => {
             setAddressList(tempList)
 
             //  儲存object 資料
-            const myObjectArrayJson = JSON.stringify(tempList);
+            const myObjectArrayJson = JSON.stringify(tempList, replacer);
 
             localStorage.setItem('signerList', myObjectArrayJson)
         }
@@ -337,18 +347,16 @@ const Robot = () => {
         handlePrivateKey(value)
     }
     const onSelectWallet = (address, index) => {
-        console.log(address, index)
         setSigner(addressList[index - 1])
     }
     const onSelectRpc = (rpc, index) => {
-        console.log(rpc, index)
         setRpcProvider(new ethers.providers.JsonRpcProvider(rpcList[index - 1]))
     }
 
     return (
         <div style={{ display: "flex", justifyContent: "center", alignItems: 'center', flexDirection: "column", marginTop: '5vh  ' }}>
             <h1>
-                Trading Bot Center
+                Transfer Center
             </h1>
             <span>
                 <span style={{ marginRight: '10px' }}>當前 rpc : </span>
@@ -391,13 +399,6 @@ const Robot = () => {
                             onSelect={onSelectWallet}
                         />
                     </h3>
-
-                    {/* 
-                    <h3>當前錢包 : {
-                        signer == null
-                            ? "未導入"
-                            : `${signer.address.slice(0, 4)}...${signer.address.slice(-4)}`
-                    }</h3> */}
                     {
                         signer !== null &&
                         <>
@@ -421,7 +422,7 @@ const Robot = () => {
                                 flexDirection: 'row',
                                 justifyContent: 'space-between',
                             }}>
-                                < CopyToClipboard
+                                <CopyToClipboard
                                     text={signer.address}
                                     onCopy={() => {
                                         swal('Success', '成功複製', 'success')
@@ -446,9 +447,6 @@ const Robot = () => {
                             </div>
                         </>
                     }
-                    {/* {
-                        signer === null &&
-                        <> */}
                     <div style={{
                         display: 'flex',
                         flexDirection: 'row',
@@ -504,7 +502,7 @@ const Robot = () => {
                     }
                 </div>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
                 {buttons.map((button, index) => {
                     return (
                         <div key={button.text}
@@ -526,11 +524,16 @@ const Robot = () => {
                                     wordBreak: 'break-word',
                                 }}
                             >{button.description}</p>
-                            <hr />
 
-                            {button.inputAmount &&
+                            {
+                                button.inputAmount > 0
+                                    ? <hr />
+                                    : null
+                            }
+
+                            {
+                                button.inputAmount &&
                                 Array.from({ length: button.inputAmount }).map((_, i) => (
-
                                     <div style={{
                                         display: 'flex',
                                         flexDirection: 'row',
@@ -560,7 +563,7 @@ const Robot = () => {
                                 {button.text}
                             </button>
                             {
-                                button.returnValue !== undefined &&
+                                button.judgement === true &&
                                 <>
                                     <hr />
                                     <span>
@@ -576,7 +579,7 @@ const Robot = () => {
     )
 }
 
-export default Robot
+export default GetHex
 
 const Dropdown = ({ options, onSelect }) => {
     const [selectedValue, setSelectedValue] = useState('');
@@ -591,7 +594,9 @@ const Dropdown = ({ options, onSelect }) => {
     }
 
     return (
-        <select value={selectedValue} onChange={handleChange}>
+        <select value={selectedValue} onChange={handleChange} style={{
+            maxWidth: '300px'
+        }}>
             <option value="" style={{
                 paddingLeft: '10px'
             }}>-- 請選擇 --</option>
@@ -602,4 +607,4 @@ const Dropdown = ({ options, onSelect }) => {
             ))}
         </select>
     );
-}
+} 

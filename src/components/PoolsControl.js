@@ -5,6 +5,7 @@ import poolABI from './ABI/PoolABI.json'
 import tokenABI from './ABI/TokenABI.json'
 import { ethers } from 'ethers'
 import swal from 'sweetalert'
+import TransactionCallBack from './TransactionCallBack'
 
 const PoolsControl = ({ defaultAccount }) => {
     //  這個位置是 Pool合約 的地址 (不是Pool工廠)
